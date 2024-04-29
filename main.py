@@ -31,20 +31,25 @@ if __name__ == "__main__":
     with microphone as source:
         recognizer.adjust_for_ambient_noise(source)
     stop_listen = recognizer.listen_in_background(microphone, callback, 3)
+    tts = pyttsx3.init()
+    rate = tts.getProperty('rate')
+    tts.setProperty('rate', rate - 40)
+    voices = tts.getProperty('voices')
     print("Init complete. Let's talk")
+    tts.setProperty('voice', 'ru')
+
+    for voice in voices:
+        if voice.name == 'Vsevolod':
+            tts.setProperty('voice', voice.id)
+
+
     while True:
         time.sleep(4.5)
-        print(recognizer.background_listener_text)
-        if "привет марвин" in recognizer.background_listener_text:
+        tts.say("ЭТА ШТУКА МЕНЯ УБИЛА")
+        tts.runAndWait()
+        if "привет марвин" in recognizer.listen("привет марвин"):
             stop_listen()
             tell_function()
             break
 
-# with speech_recognition.Microphone() as source:
-#    print("Say something!")
-#    audio = recognizer.listen(source, 4, 4)
 
-# words = json_data["text"].split(" ")
-#    for word in words:
-#        if word in dict_commands.keys():
-#            print(dict_commands[word])
