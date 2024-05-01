@@ -13,12 +13,10 @@ textDescriptionFunction = """
 Скажите, что вы хотите сделать?
 """
 
-def recog(recognizer, audio):
-    recognized_data = recognizer.recognize_vosk(audio, language="rus")
-    return recognized_data
+
 
 def recognize_cmd(cmd, dict):
-  print(*dict)
+  print(dict)
   k = {'cmd':"", 'com':" "}
   for key in dict:
      print("key", key)
@@ -26,7 +24,7 @@ def recognize_cmd(cmd, dict):
          k['cmd']= key
          return k
 def callback(recognizer, audio):
-    recognized_data = recog(recognizer, audio)
+    recognized_data = recognizer.recognize_vosk(audio, language="rus")
     json_data = json.loads(recognized_data)
     if "привет марвин" in recognized_data:
         tell_function(textDescriptionFunction)
@@ -36,6 +34,8 @@ def callback(recognizer, audio):
         cmd = recognize_cmd(cmd, commands.dict_commands['intents'].keys())
         print("cmd", cmd)
         commands.dict_commands['intents'][cmd['cmd']]["responses"](audio, recognizer)
+    print(json_data)
+    return json_data
 
 def tell_function(what):
     tts.say(what)
@@ -44,8 +44,20 @@ def tell_function(what):
 
 def choose_card(recognizer, audio):
     tell_function("Скажите последние 4 цифры карты ")
-    rec = recog(recognizer, audio)
+    print(recognizer, audio)
+    start()
+    rec = json_data['text']
+
     return rec
+
+def start():
+    global json_data
+    recognizer = speech_recognition.Recognizer()
+    with speech_recognition.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+    json_data=callback(recognizer, audio)
+
 
 if __name__ == "__main__":
     recognizer = speech_recognition.Recognizer()
@@ -60,10 +72,8 @@ if __name__ == "__main__":
             tts.setProperty('voice', voice.id)
     print("Init complete. Let's talk")
     while True:
-        with microphone as source:
-            recognizer.adjust_for_ambient_noise(source)
-            audio = recognizer.listen(source)
-        callback(recognizer, audio)
+         start()
+
 
 
 def send():
@@ -78,20 +88,23 @@ def pay():
 def pay_service(audio, recognizer):
     card = choose_card(recognizer, audio)
     #логика для подтягивания нужной карты
-    dis = {'cmd': {'мобильная связь и Интернет'}}
-    print(card)
+    dis = {'cmd': {'связь и интернет'}}
+
     tell_function("Выберите то, что хотите оплатить "+str(dis['cmd']))
-    reci = recog(recognizer, audio)
-    print(reci)
-    topic = recognize_cmd(reci, dis.keys())
+    start()
+    reci = json_data['text']
+
+    topic = recognize_cmd(reci, dis['cmd'])
     tell_function("Скажите номер телефона ")
-    rec_tel = recog(recognizer, audio)
+    start()
+    rec_tel = json_data['text']
     tell_function("Скажите сумму ")
-    rec_sum = recog(recognizer, audio)
-    tell_function("Я правильно понял, вы хотите пополнить" + topic + " номер телефона"+rec_tel+" на сумму"+rec_sum)
-    print(card, rec_tel, rec_sum)
+    start()
+    rec_sum = json_data['text']
+    tell_function("Я правильно понял, вы хотите пополнить" + topic['cmd'] + " номер телефона"+rec_tel+" на сумму"+rec_sum)
 
 
+'''''
 def execute_cmd(cmd):
     if "баланс" in cmd:
         tell_function("Скажите "+str(commands.dict_commands["баланс"]))
@@ -104,7 +117,7 @@ def execute_cmd(cmd):
         tell_function("Уточните, пожалуйста "+commands.dict_commands["перевод"])
     else:
         print('Команда не распознана, повторите!')
-
+'''''
 
 
 
