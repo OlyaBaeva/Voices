@@ -1,4 +1,7 @@
 import json
+import time
+from difflib import get_close_matches
+
 import speech_recognition
 import pyttsx3
 from fuzzywuzzy import fuzz
@@ -10,10 +13,11 @@ import commands
 tts = pyttsx3.init()
 textDescriptionFunction = """
 Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
-команда перевод, для перевода денег.
+команда перевод, для перевода денег по номеру карты, реквизитам, номеру телефона.
 команда баланс, для проверки баланса.
 команда пополнить для пополнения телефона.
-Скажите, что вы хотите сделать?
+команда добавить название, для добавления названия вклада.
+Скажите,Марвин и название команды для начала работы.
 """
 
 def start():
@@ -22,30 +26,38 @@ def start():
     with speech_recognition.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
-    json_data=callback(recognizer, audio)
+    json_data=main_com(recognizer, audio)
 
 def recognize_cmd(cmd, dict):
-  k = {'cmd': "", 'com': " "}
+  k = {'cmd': "", 'percent': 0}
   for key in dict:
-     print(key,dict)
      if key in cmd:
-        print(key)
         k['cmd'] = key
         return k
-  print(json_data['text'], k)
-  tell_function("команда не распознана, пожалуйста повторите")
+  return k
+
 
 
 def callback(recognizer, audio):
     recognized_data = recognizer.recognize_vosk(audio, language="rus")
     json_data = json.loads(recognized_data)
+    return json_data, recognized_data
+
+def main_com(recognizer, audio):
+    cmd = {'cmd': "", 'com': ""}
+    json_data, recognized_data = callback(recognizer, audio)
+    # com - задел на будущее если вдруг хватит сил на подтягивание не только основной команды, но и аргументов
     if "привет марвин" in recognized_data:
         tell_function(textDescriptionFunction)
     elif commands.dict_commands['intents']["имя"] in recognized_data:
-        cmd = recognized_data
-        cmd = recognize_cmd(cmd, commands.dict_commands['intents'].keys())
-        commands.dict_commands['intents'][cmd['cmd']]["responses"]()
+        cmd = recognize_cmd(recognized_data, commands.dict_commands['intents'].keys())
+        if cmd['cmd'] == "":
+             tell_function('Повторите команду')
+             start()
+        else:
+             commands.dict_commands['intents'][cmd['cmd']]["responses"]()
     return json_data
+
 
 def tell_function(what):
     tts.say(what)
@@ -77,13 +89,10 @@ def check_length(length, tell):
 
 def check(tell, length):
    rec = ""
-   print(tell)
    if length != 0:
        rec = check_length(length, tell)
    else:
-       print("tell", tell)
        while rec =="":
-         print("tell", tell, rec)
          tell_function(tell)
          start()
          rec = json_data['text']
@@ -110,76 +119,73 @@ if __name__ == "__main__":
 
 def send():
     card = choose_card()
+    card_str = json_data['text']
     conf_bool = False
     while not conf_bool:
-        dis = {"cmd": ["карта", "номер счёта", "номер телефона"]}
+        dis = {"cmd": ["номер карты", "реквизиты", "номер телефона"]}
         reci = check("Выберите, через что вы хотите осуществить перевод: " + str(dis['cmd']), 0)
         topic = recognize_cmd(reci, dis['cmd'])
-        print('topic', topic)
-        if 'карта' in topic['cmd']:
+        if 'номер карты' in topic['cmd']:
             card_num = check("Скажите номер карты цифрами ", 16)
+            card_str = json_data['text']
             card_sum = check("Скажите cумму цифрами ", 0)
-            conf_bool=conf("Вы хотите перевести"+ card_sum +" на карту"+str(card_num))
-        elif 'номер счёта' in topic['cmd']:
-            #очень больно и много параметров
-            pass
+            conf_bool = conf("Перевести" + card_sum +" на карту"+card_str)
+        elif 'реквизиты' in topic['cmd']:
+            account_num = check("Скажите номер счёта получателя цифрами ", 20)
+            #инн разный для ИП и нет, надо добавить проверку 10 или 12
+            nn = check("Скажите ИНН получателя цифрами ", 10)
+            nn_str = json_data['text']
+            pp = check("Скажите КПП получателя цифрами ", 9)
+            pp_str = json_data['text']
+            bik = check("Скажите БИК получателя цифрами ", 9)
+            bik_str = json_data['text']
+            card_sum = check("Скажите cумму цифрами ", 0)
+            conf_bool = conf("Перевести" + card_sum + "по реквизитам. номер счёта" +account_num+
+                             ".ИНН"+ nn_str+".КПП"+pp_str+".БИК"+bik_str)
         elif 'номер телефона' in topic['cmd']:
-            bank = {'name': ['мтс', 'втб', 'сбербанк']}
-            rec_tel = str(check("Скажите номер телефона ", 10))
-            # хорошо бы подтягивать по номеру телефона имеющиеся банки, но пока список
-            rec_bank = str(check("Скажите название банка получателя ", 0))
-            check_bank = recognize_cmd(rec_bank, bank['name'])
-            card_sum = convert_to_numbers(check("Скажите сумму цифрами ", 0))
-            conf_bool = conf("Вы хотите перевести" + card_sum + " по номеру" + str(rec_tel)+ ". банк"+check_bank['cmd'])
+            rec_tel = check("Скажите номер телефона ", 10)
+            str_tel = json_data['text']
+            card_sum = (check("Скажите сумму ", 0))
+            conf_bool = conf("Перевести" + card_sum + " по номеру" + str_tel)
 
 def balance():
     card = choose_card()
-    tell_function("Баланс вашей карты "+str(card) + "составляет")
+    card_str = json_data['text']
+    tell_function("Баланс вашей карты "+card_str + "составляет")
 
 def new():
-    pass
-def pay():
-    pass
-
+    conf_bool = False
+    while not conf_bool:
+        reci = check("Скажите название какого вклада вы хотите изменить ", 0)
+        new_name = check("Скажите новое название ", 0)
+        conf_bool = conf("Поменять название вклада" + reci + " на " + new_name)
 
 
 def pay_service():
     conf_bool = False
     while not conf_bool:
         card = choose_card()
+        card_str = json_data['text']
         #логика для подтягивания нужной карты
         dis = {'cmd': {'связь и интернет'}}
         reci = check("Выберите то, что хотите оплатить "+str(dis['cmd']), 0)
         topic = recognize_cmd(reci, dis['cmd'])
-        rec_tel = str(check("Скажите номер телефона ", 10))
-        rec_sum = convert_to_numbers(check("Скажите сумму цифрами ", 0))
-        conf_bool = conf("Я правильно понял, вы хотите пополнить" + topic['cmd'] + " номер телефона"+str(rec_tel)+" на сумму"+rec_sum)
+        rec_tel = check("Скажите номер телефона ", 10)
+        str_tel = json_data['text']
+        rec_sum = check("Скажите сумму ", 0)
+        conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона"+str_tel+" на сумму"+rec_sum)
 
 def conf(tell):
-    tell_function(tell+". Скажите пожалуйста Да или Нет")
+    tell_function(tell+". Скажите пожалуйста. Да или Нет")
     start()
     if "да" in json_data['text']:
-        tell_function("выполняю "+ tell)
+        tell_function("выполняю команду"+ tell)
         #логика выполнения команды
         return True
     elif "нет" in json_data['text']:
         tell_function("Давайте попробуем еще раз ")
         return False
 
-'''''
-def execute_cmd(cmd):
-    if "баланс" in cmd:
-        tell_function("Скажите "+str(commands.dict_commands["баланс"]))
-
-    elif "пополнить" in cmd:
-        tell_function(cmd)
-    elif "оплатить" in cmd:
-        tell_function(cmd)
-    elif "перевод" in cmd:
-        tell_function("Уточните, пожалуйста "+commands.dict_commands["перевод"])
-    else:
-        print('Команда не распознана, повторите!')
-'''''
 
 
 

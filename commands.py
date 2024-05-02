@@ -10,7 +10,6 @@ dict_commands = {
          },
     "баланс":
         {
-             #скажите последние 4 цифры номера
              "responses": main.balance
         },
     "добавить название":{
@@ -20,12 +19,8 @@ dict_commands = {
         {
 
             "responses": main.pay_service
-        },
-    "оплатить":
-        {
-
-            "responses": main.pay
         }
+
 }
 }
 
