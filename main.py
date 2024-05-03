@@ -1,16 +1,11 @@
 import json
+import time
+
 import speech_recognition
 import pyttsx3
 from ru_word2number import w2n
 import commands
-
-
-def start():
-    recognizer = speech_recognition.Recognizer()
-    with speech_recognition.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source)
-    return main_com(recognizer, audio)
+from CustomRecognizer import CustomRecognizer
 
 
 def recognize_cmd(cmd, dict):
@@ -22,26 +17,37 @@ def recognize_cmd(cmd, dict):
   return k
 
 
+def command_listener(recognizer):
+    global microphone
+    with microphone as s:
+        audio = recognizer.listen(s,5)
+    recognizer_data = recognizer.recognize_vosk(audio, language="rus")
+    text = json.loads(recognizer_data)["text"]
+    if text != "":
+        return text
+    else:
+        return "Empty command"
+
+
 def callback(recognizer, audio):
     recognized_data = recognizer.recognize_vosk(audio, language="rus")
-    return json.loads(recognized_data), recognized_data
+    print(json.loads(recognized_data)["text"])
+    return json.loads(recognized_data)["text"]
 
 
-def main_com(recognizer, audio):
-    global json_data
+def main_com():
+    global recognizer
     cmd = {'cmd': "", 'com': ""}
-    json_data, recognized_data = callback(recognizer, audio)
     # com - задел на будущее если вдруг хватит сил на подтягивание не только основной команды, но и аргументов
-    if "привет марвин" in recognized_data:
+    if "привет марвин" in recognizer.background_listener_text:
         tell_function(textDescriptionFunction)
-    elif commands.dict_commands['intents']["имя"] in recognized_data:
-        cmd = recognize_cmd(recognized_data, commands.dict_commands['intents'].keys())
+    elif commands.dict_commands['intents']["имя"] in recognizer.background_listener_text:
+        cmd = recognize_cmd(recognizer.background_listener_text, commands.dict_commands['intents'].keys())
         if cmd['cmd'] == "":
              tell_function('Повторите команду')
-             start()
         else:
-             commands.dict_commands['intents'][cmd['cmd']]["responses"]()
-    return json_data
+            stop_listener()
+            commands.dict_commands['intents'][cmd['cmd']]["responses"]()
 
 
 def tell_function(what):
@@ -69,30 +75,31 @@ def choose_card():
 
 
 def check_length(length, tell):
+    global recognizer
     par = ""
     while not len(par) == length:
         tell_function(tell)
-        start()
-        par = json_data['text']
+        par = command_listener(recognizer)
         par = convert_to_numbers(par)
     return par
 
 
 def check(tell, length):
+   global recognizer
    rec = ""
    if length != 0:
-       rec = check_length(length, tell)
+       rec = check_length(length, tell, recognizer)
    else:
-       while rec =="":
+       while rec == "":
          tell_function(tell)
-         start()
-         rec = json_data['text']
+         rec = recognizer.background_listener_text
    return rec
 
 
 def send():
+    global recognizer
     card = choose_card()
-    card_str = json_data['text']
+    card_str = recognizer.background_listener_text
     conf_bool = False
     while not conf_bool:
         dis = {"cmd": ["номер карты", "реквизиты", "номер телефона"]}
@@ -100,31 +107,32 @@ def send():
         topic = recognize_cmd(reci, dis['cmd'])
         if 'номер карты' in topic['cmd']:
             card_num = check("Скажите номер карты цифрами ", 16)
-            card_str = json_data['text']
+            card_str = recognizer.background_listener_text
             card_sum = check("Скажите cумму цифрами ", 0)
             conf_bool = conf("Перевести" + card_sum +" на карту"+card_str)
         elif 'реквизиты' in topic['cmd']:
             account_num = check("Скажите номер счёта получателя цифрами ", 20)
             #инн разный для ИП и нет, надо добавить проверку 10 или 12
             nn = check("Скажите ИНН получателя цифрами ", 10)
-            nn_str = json_data['text']
+            nn_str = recognizer.background_listener_text
             pp = check("Скажите КПП получателя цифрами ", 9)
-            pp_str = json_data['text']
+            pp_str = recognizer.background_listener_text
             bik = check("Скажите БИК получателя цифрами ", 9)
-            bik_str = json_data['text']
+            bik_str = recognizer.background_listener_text
             card_sum = check("Скажите cумму цифрами ", 0)
-            conf_bool = conf("Перевести" + card_sum + "по реквизитам. номер счёта" +account_num+
-                             ".ИНН"+ nn_str+".КПП"+pp_str+".БИК"+bik_str)
+            conf_bool = conf(f"Перевести {card_sum} по реквизитам. Номер счёта"
+                             f" {account_num}. ИНН{nn_str}. КПП{pp_str}. БИК{bik_str}")
         elif 'номер телефона' in topic['cmd']:
             rec_tel = check("Скажите номер телефона ", 10)
-            str_tel = json_data['text']
+            str_tel = recognizer.background_listener_text
             card_sum = (check("Скажите сумму ", 0))
             conf_bool = conf("Перевести" + card_sum + " по номеру" + str_tel)
 
 
 def balance():
+    global recognizer
     card = choose_card()
-    card_str = json_data['text']
+    card_str = recognizer.background_listener_text
     tell_function("Баланс вашей карты "+card_str + "составляет")
 
 
@@ -137,34 +145,35 @@ def new():
 
 
 def pay_service():
+    global recognizer
     conf_bool = False
     while not conf_bool:
         card = choose_card()
-        card_str = json_data['text']
+        card_str = recognizer.background_listener_text
         #логика для подтягивания нужной карты
         dis = {'cmd': {'связь и интернет'}}
         reci = check("Выберите то, что хотите оплатить "+str(dis['cmd']), 0)
         topic = recognize_cmd(reci, dis['cmd'])
         rec_tel = check("Скажите номер телефона ", 10)
-        str_tel = json_data['text']
+        str_tel = recognizer.background_listener_text
         rec_sum = check("Скажите сумму ", 0)
         conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона"+str_tel+" на сумму"+rec_sum)
 
 
 def conf(tell):
     tell_function(tell+". Скажите пожалуйста. Да или Нет")
-    start()
-    if "да" in json_data['text']:
+    if "да" in recognizer.background_listener_text:
         tell_function("выполняю команду"+ tell)
         #логика выполнения команды
         return True
-    elif "нет" in json_data['text']:
+    elif "нет" in recognizer.background_listener_text:
         tell_function("Давайте попробуем еще раз ")
         return False
 
 
 tts = pyttsx3.init()
-json_data = None
+recognizer = CustomRecognizer()
+microphone = speech_recognition.Microphone()
 if __name__ == "__main__":
     textDescriptionFunction = """
     Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
@@ -181,12 +190,8 @@ if __name__ == "__main__":
         if voice.name == 'Vsevolod':
             tts.setProperty('voice', voice.id)
     print("Init complete. Let's talk")
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source)
+    stop_listener = recognizer.listen_in_background(microphone, callback, 2)
     while True:
-         start()
-
-
-
-
-
-
-
+        main_com()
