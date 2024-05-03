@@ -1,6 +1,4 @@
 import json
-import time
-from difflib import get_close_matches
 import speech_recognition
 import pyttsx3
 from ru_word2number import w2n
@@ -8,12 +6,11 @@ import commands
 
 
 def start():
-    global json_data
     recognizer = speech_recognition.Recognizer()
     with speech_recognition.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
-    json_data = main_com(recognizer, audio)
+    return main_com(recognizer, audio)
 
 
 def recognize_cmd(cmd, dict):
@@ -27,10 +24,11 @@ def recognize_cmd(cmd, dict):
 
 def callback(recognizer, audio):
     recognized_data = recognizer.recognize_vosk(audio, language="rus")
-    json_data = json.loads(recognized_data)
-    return json_data, recognized_data
+    return json.loads(recognized_data), recognized_data
+
 
 def main_com(recognizer, audio):
+    global json_data
     cmd = {'cmd': "", 'com': ""}
     json_data, recognized_data = callback(recognizer, audio)
     # com - задел на будущее если вдруг хватит сил на подтягивание не только основной команды, но и аргументов
@@ -165,9 +163,9 @@ def conf(tell):
         return False
 
 
-json_data = ""
+tts = pyttsx3.init()
+json_data = None
 if __name__ == "__main__":
-    tts = pyttsx3.init()
     textDescriptionFunction = """
     Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
     команда перевод, для перевода денег по номеру карты, реквизитам, номеру телефона.
@@ -176,7 +174,7 @@ if __name__ == "__main__":
     команда добавить название, для добавления названия вклада.
     Скажите,Марвин и название команды для начала работы.
     """
-    tts.setProperty('rate', 50)
+    tts.setProperty('rate', 220)
     voices = tts.getProperty('voices')
     tts.setProperty('voice', 'ru')
     for voice in voices:
