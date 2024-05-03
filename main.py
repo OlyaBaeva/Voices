@@ -30,7 +30,6 @@ def callback(recognizer, audio):
     json_data = json.loads(recognized_data)
     return json_data, recognized_data
 
-
 def main_com(recognizer, audio):
     cmd = {'cmd': "", 'com': ""}
     json_data, recognized_data = callback(recognizer, audio)
