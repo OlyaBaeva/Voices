@@ -1,24 +1,11 @@
 import json
 import time
 from difflib import get_close_matches
-
 import speech_recognition
 import pyttsx3
-from fuzzywuzzy import fuzz
 from ru_word2number import w2n
-
 import commands
 
-
-tts = pyttsx3.init()
-textDescriptionFunction = """
-Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
-команда перевод, для перевода денег по номеру карты, реквизитам, номеру телефона.
-команда баланс, для проверки баланса.
-команда пополнить для пополнения телефона.
-команда добавить название, для добавления названия вклада.
-Скажите,Марвин и название команды для начала работы.
-"""
 
 def start():
     global json_data
@@ -26,7 +13,8 @@ def start():
     with speech_recognition.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
-    json_data=main_com(recognizer, audio)
+    json_data = main_com(recognizer, audio)
+
 
 def recognize_cmd(cmd, dict):
   k = {'cmd': "", 'percent': 0}
@@ -37,11 +25,11 @@ def recognize_cmd(cmd, dict):
   return k
 
 
-
 def callback(recognizer, audio):
     recognized_data = recognizer.recognize_vosk(audio, language="rus")
     json_data = json.loads(recognized_data)
     return json_data, recognized_data
+
 
 def main_com(recognizer, audio):
     cmd = {'cmd': "", 'com': ""}
@@ -63,6 +51,8 @@ def tell_function(what):
     tts.say(what)
     tts.runAndWait()
     tts.stop()
+
+
 def convert_to_numbers(rec):
     s = list(rec.split())
     new_rec = list()
@@ -74,9 +64,12 @@ def convert_to_numbers(rec):
             return ""
     new_rec = "".join(str(el) for el in new_rec)
     return new_rec
+
+
 def choose_card():
     rec = check_length(4, "Скажите последние 4 цифры карты ")
     return rec
+
 
 def check_length(length, tell):
     par = ""
@@ -86,6 +79,7 @@ def check_length(length, tell):
         par = json_data['text']
         par = convert_to_numbers(par)
     return par
+
 
 def check(tell, length):
    rec = ""
@@ -97,24 +91,6 @@ def check(tell, length):
          start()
          rec = json_data['text']
    return rec
-
-
-
-if __name__ == "__main__":
-    recognizer = speech_recognition.Recognizer()
-    microphone = speech_recognition.Microphone()
-
-    rate = tts.getProperty('rate')
-    tts.setProperty('rate', rate - 40)
-    voices = tts.getProperty('voices')
-    tts.setProperty('voice', 'ru')
-    for voice in voices:
-        if voice.name == 'Vsevolod':
-            tts.setProperty('voice', voice.id)
-    print("Init complete. Let's talk")
-    while True:
-         start()
-
 
 
 def send():
@@ -148,10 +124,12 @@ def send():
             card_sum = (check("Скажите сумму ", 0))
             conf_bool = conf("Перевести" + card_sum + " по номеру" + str_tel)
 
+
 def balance():
     card = choose_card()
     card_str = json_data['text']
     tell_function("Баланс вашей карты "+card_str + "составляет")
+
 
 def new():
     conf_bool = False
@@ -175,6 +153,7 @@ def pay_service():
         rec_sum = check("Скажите сумму ", 0)
         conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона"+str_tel+" на сумму"+rec_sum)
 
+
 def conf(tell):
     tell_function(tell+". Скажите пожалуйста. Да или Нет")
     start()
@@ -187,7 +166,26 @@ def conf(tell):
         return False
 
 
-
+json_data = ""
+if __name__ == "__main__":
+    tts = pyttsx3.init()
+    textDescriptionFunction = """
+    Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
+    команда перевод, для перевода денег по номеру карты, реквизитам, номеру телефона.
+    команда баланс, для проверки баланса.
+    команда пополнить для пополнения телефона.
+    команда добавить название, для добавления названия вклада.
+    Скажите,Марвин и название команды для начала работы.
+    """
+    tts.setProperty('rate', 50)
+    voices = tts.getProperty('voices')
+    tts.setProperty('voice', 'ru')
+    for voice in voices:
+        if voice.name == 'Vsevolod':
+            tts.setProperty('voice', voice.id)
+    print("Init complete. Let's talk")
+    while True:
+         start()
 
 
 
