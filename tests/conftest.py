@@ -1,14 +1,9 @@
 import pytest
-import threading
-from flask.testing import FlaskCliRunner
-from api import app
+from api import create_app
 
 
 @pytest.fixture
-def app_server():
-    runner = FlaskCliRunner(app)
-    process = threading.Thread(target=runner.invoke, args=["run", "--no-reloader"])
-    process.start()
-
-    yield
-    process.join()
+def server():
+    app = create_app()
+    with app.test_client() as server:
+        yield server

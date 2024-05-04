@@ -2,7 +2,7 @@ import json
 import speech_recognition
 import pyttsx3
 from ru_word2number import w2n
-import commands
+import Levenshtein
 
 
 def start():
@@ -15,10 +15,14 @@ def start():
 
 def recognize_cmd(cmd, dict):
     k = {'cmd': "", 'percent': 0}
+    if 'марвин' in cmd:
+        cmd = cmd.replace('марвин', '')
+    cmd = cmd.replace(" ", "")
+    match_list = {}
     for key in dict:
-        if key in cmd:
-            k['cmd'] = key
-            return k
+        concat_name = ''.join(key.split()).lower()
+        match_list[key] = Levenshtein.jaro_winkler(cmd, concat_name) / len(key.split())
+    k['cmd'] = max(match_list.items(), key=lambda x: x[1])[0]
     return k
 
 
@@ -32,6 +36,7 @@ def main_com(recognizer, audio):
     cmd = {'cmd': "", 'com': ""}
     json_data, recognized_data = callback(recognizer, audio)
     # com - задел на будущее если вдруг хватит сил на подтягивание не только основной команды, но и аргументов
+    import commands
     if "привет марвин" in recognized_data:
         tell_function(textDescriptionFunction)
     elif commands.dict_commands['intents']["имя"] in recognized_data:
@@ -64,14 +69,9 @@ def convert_to_numbers(rec):
 
 
 def choose_card():
-    rec = check_length(4, "Скажите последние 4 цифры карты ")
+    rec = check_length(4, "хихихих . Скажите последние 4 цифры карты ")
     return rec
 
-
-def balance():
-    card = choose_card()
-    card_str = json_data['text']
-    tell_function("Баланс вашей карты " + card_str + "составляет")
 
 def check_length(length, tell):
     par = ""
@@ -100,10 +100,10 @@ def send():
     card_str = json_data['text']
     conf_bool = False
     while not conf_bool:
-        dis = {"cmd": ["номер карты", "реквизиты", "номер телефона"]}
+        dis = {"cmd": ["карта", "реквизиты", "номер телефона"]}
         reci = check("Выберите, через что вы хотите осуществить перевод: " + str(dis['cmd']), 0)
         topic = recognize_cmd(reci, dis['cmd'])
-        if 'номер карты' in topic['cmd']:
+        if 'карта' in topic['cmd']:
             card_num = check("Скажите номер карты цифрами ", 16)
             card_str = json_data['text']
             card_sum = check("Скажите cумму цифрами ", 0)
@@ -126,6 +126,11 @@ def send():
             card_sum = (check("Скажите сумму ", 0))
             conf_bool = conf("Перевести" + card_sum + " по номеру" + str_tel)
 
+
+def balance():
+    card = choose_card()
+    card_str = json_data['text']
+    tell_function("Баланс вашей карты " + card_str + "составляет")
 
 
 def new():
@@ -164,7 +169,7 @@ def conf(tell):
 
 
 tts = pyttsx3.init()
-json_data = None
+
 if __name__ == "__main__":
     textDescriptionFunction = """
     Вас приветствует голосовой помощник Марвин. Голосовому помощнику доступны следующие команды: 
@@ -174,7 +179,8 @@ if __name__ == "__main__":
     команда добавить название, для добавления названия вклада.
     Скажите,Марвин и название команды для начала работы.
     """
-    tts.setProperty('rate', 220)
+    rate = tts.getProperty('rate')
+    tts.setProperty('rate', rate - 40)
     voices = tts.getProperty('voices')
     tts.setProperty('voice', 'ru')
     for voice in voices:
