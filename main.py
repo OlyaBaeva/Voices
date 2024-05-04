@@ -14,12 +14,12 @@ def start():
 
 
 def recognize_cmd(cmd, dict):
-  k = {'cmd': "", 'percent': 0}
-  for key in dict:
-     if key in cmd:
-        k['cmd'] = key
-        return k
-  return k
+    k = {'cmd': "", 'percent': 0}
+    for key in dict:
+        if key in cmd:
+            k['cmd'] = key
+            return k
+    return k
 
 
 def callback(recognizer, audio):
@@ -37,10 +37,10 @@ def main_com(recognizer, audio):
     elif commands.dict_commands['intents']["имя"] in recognized_data:
         cmd = recognize_cmd(recognized_data, commands.dict_commands['intents'].keys())
         if cmd['cmd'] == "":
-             tell_function('Повторите команду')
-             start()
+            tell_function('Повторите команду')
+            start()
         else:
-             commands.dict_commands['intents'][cmd['cmd']]["responses"]()
+            commands.dict_commands['intents'][cmd['cmd']]["responses"]()
     return json_data
 
 
@@ -68,6 +68,11 @@ def choose_card():
     return rec
 
 
+def balance():
+    card = choose_card()
+    card_str = json_data['text']
+    tell_function("Баланс вашей карты " + card_str + "составляет")
+
 def check_length(length, tell):
     par = ""
     while not len(par) == length:
@@ -79,15 +84,15 @@ def check_length(length, tell):
 
 
 def check(tell, length):
-   rec = ""
-   if length != 0:
-       rec = check_length(length, tell)
-   else:
-       while rec =="":
-         tell_function(tell)
-         start()
-         rec = json_data['text']
-   return rec
+    rec = ""
+    if length != 0:
+        rec = check_length(length, tell)
+    else:
+        while rec == "":
+            tell_function(tell)
+            start()
+            rec = json_data['text']
+    return rec
 
 
 def send():
@@ -102,10 +107,10 @@ def send():
             card_num = check("Скажите номер карты цифрами ", 16)
             card_str = json_data['text']
             card_sum = check("Скажите cумму цифрами ", 0)
-            conf_bool = conf("Перевести" + card_sum +" на карту"+card_str)
+            conf_bool = conf("Перевести" + card_sum + " на карту" + card_str)
         elif 'реквизиты' in topic['cmd']:
             account_num = check("Скажите номер счёта получателя цифрами ", 20)
-            #инн разный для ИП и нет, надо добавить проверку 10 или 12
+            # инн разный для ИП и нет, надо добавить проверку 10 или 12
             nn = check("Скажите ИНН получателя цифрами ", 10)
             nn_str = json_data['text']
             pp = check("Скажите КПП получателя цифрами ", 9)
@@ -113,19 +118,14 @@ def send():
             bik = check("Скажите БИК получателя цифрами ", 9)
             bik_str = json_data['text']
             card_sum = check("Скажите cумму цифрами ", 0)
-            conf_bool = conf("Перевести" + card_sum + "по реквизитам. номер счёта" +account_num+
-                             ".ИНН"+ nn_str+".КПП"+pp_str+".БИК"+bik_str)
+            conf_bool = conf("Перевести" + card_sum + "по реквизитам. номер счёта" + account_num +
+                             ".ИНН" + nn_str + ".КПП" + pp_str + ".БИК" + bik_str)
         elif 'номер телефона' in topic['cmd']:
             rec_tel = check("Скажите номер телефона ", 10)
             str_tel = json_data['text']
             card_sum = (check("Скажите сумму ", 0))
             conf_bool = conf("Перевести" + card_sum + " по номеру" + str_tel)
 
-
-def balance():
-    card = choose_card()
-    card_str = json_data['text']
-    tell_function("Баланс вашей карты "+card_str + "составляет")
 
 
 def new():
@@ -141,22 +141,22 @@ def pay_service():
     while not conf_bool:
         card = choose_card()
         card_str = json_data['text']
-        #логика для подтягивания нужной карты
+        # логика для подтягивания нужной карты
         dis = {'cmd': {'связь и интернет'}}
-        reci = check("Выберите то, что хотите оплатить "+str(dis['cmd']), 0)
+        reci = check("Выберите то, что хотите оплатить " + str(dis['cmd']), 0)
         topic = recognize_cmd(reci, dis['cmd'])
         rec_tel = check("Скажите номер телефона ", 10)
         str_tel = json_data['text']
         rec_sum = check("Скажите сумму ", 0)
-        conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона"+str_tel+" на сумму"+rec_sum)
+        conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона" + str_tel + " на сумму" + rec_sum)
 
 
 def conf(tell):
-    tell_function(tell+". Скажите пожалуйста. Да или Нет")
+    tell_function(tell + ". Скажите пожалуйста. Да или Нет")
     start()
     if "да" in json_data['text']:
-        tell_function("выполняю команду"+ tell)
-        #логика выполнения команды
+        tell_function("выполняю команду" + tell)
+        # логика выполнения команды
         return True
     elif "нет" in json_data['text']:
         tell_function("Давайте попробуем еще раз ")
@@ -182,11 +182,4 @@ if __name__ == "__main__":
             tts.setProperty('voice', voice.id)
     print("Init complete. Let's talk")
     while True:
-         start()
-
-
-
-
-
-
-
+        start()

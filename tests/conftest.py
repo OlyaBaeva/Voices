@@ -1,14 +1,14 @@
 import pytest
-from mock_server import run_mock_server
+import threading
+from flask.testing import FlaskCliRunner
+from api import app
 
 
 @pytest.fixture
-def mock_server():
-    import threading
-    server_thread = threading.Thread(target=run_mock_server)
-    server_thread.start()
-    print("Mock server started")
+def app_server():
+    runner = FlaskCliRunner(app)
+    process = threading.Thread(target=runner.invoke, args=["run", "--no-reloader"])
+    process.start()
+
     yield
-    print("Mock server stopped")
-    server_thread.join()
-    print("Test passed")
+    process.join()
