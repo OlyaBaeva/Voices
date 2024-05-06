@@ -69,7 +69,7 @@ def convert_to_numbers(rec):
 
 
 def choose_card():
-    rec = check_length(4, "хихихих . Скажите последние 4 цифры карты ")
+    rec = check_length(4, "Скажите последние 4 цифры карты ")
     return rec
 
 
@@ -81,6 +81,11 @@ def check_length(length, tell):
         par = json_data['text']
         par = convert_to_numbers(par)
     return par
+
+
+def check_number():
+    rec = check("Скажите номер телефона ", 10)
+    return rec
 
 
 def check(tell, length):
@@ -96,8 +101,10 @@ def check(tell, length):
 
 
 def send():
+    '''''
     card = choose_card()
     card_str = json_data['text']
+    '''''
     conf_bool = False
     while not conf_bool:
         dis = {"cmd": ["карта", "реквизиты", "номер телефона"]}
@@ -128,9 +135,15 @@ def send():
 
 
 def balance():
-    card = choose_card()
     card_str = json_data['text']
     tell_function("Баланс вашей карты " + card_str + "составляет")
+
+
+def get_username():
+    tell_function("Скажите имя пользователя ")
+    start()
+    rec = json_data['text']
+    return rec
 
 
 def new():
