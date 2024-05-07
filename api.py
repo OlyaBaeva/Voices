@@ -14,6 +14,12 @@ users = {
                 "card_number": '5678',
                 "balance": "1000"
             }
+        },
+        "deposits": {
+            "premium": {
+                "deposit_name": "",
+                "money": "",
+        }
         }
     },
     "Irina": {
@@ -61,5 +67,29 @@ def get_balance(username: Union[str, None] = None, card: Union[str, None] = None
             print(el)
             if el["card_number"] == card:
                 return {"card": card, "balance": el["balance"]}
+        return HTTPException(404, detail=f"User with username: {username} haven't card {card}")
+    return HTTPException(status_code=404, detail=f"User with username: {username} not found")
+
+
+@app.get("/pay")
+def pay_service(username: Union[str, None] = None, card: Union[str, None] = None, phone: Union[str, None] = None, amount: Union[str, None] = None):
+    """
+    FastAPI endpoint for get balance from card for user
+    :param phone:
+    :param amount:
+    :param username: username user
+    :param card: last 4 number card
+    :return:
+    """
+    if users[username] is not None:
+        cards = users[username]["cards"]
+        for el in cards.values():
+            print(el)
+            if el["card_number"] == card:
+                if int(el["balance"]) >= int(amount):
+                    users[username][el]["balance"] = str(int(el["balance"]) - int(amount))
+                    print(el["balance"])
+                    return {"card": card, "balance": el["balance"]}
+                return HTTPException(404, detail=f"Insufficient funds")
         return HTTPException(404, detail=f"User with username: {username} haven't card {card}")
     return HTTPException(status_code=404, detail=f"User with username: {username} not found")

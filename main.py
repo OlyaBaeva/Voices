@@ -33,7 +33,7 @@ def balance():
     global BASE_URL
     card = choose_card()
     if card is not None:
-        response = requests.get(BASE_URL + "balance?username="+default_user+"&card=" + card)
+        response = requests.get(BASE_URL + "balance?username=" + default_user + "&card=" + card)
         if response.status_code == 200:
             amount = json.loads(response.text)["balance"]
             tell_function(f"Баланс вашей карты {card} составляет {amount}")
@@ -85,20 +85,29 @@ def send():
 
 
 def pay_service():
-    pass
-    '''
     conf_bool = False
     while not conf_bool:
         card = choose_card()
-        # логика для подтягивания нужной карты
-        dis = {'cmd': {'связь и интернет'}}
-        reci = check("Выберите то, что хотите оплатить " + str(dis['cmd']), 0)
-        topic = recognize_cmd(reci, dis['cmd'])
-        rec_tel = check("Скажите номер телефона ", 10)
-        str_tel = json_data['text']
-        rec_sum = vosk_listen_recognize("Скажите сумму ", 3)
-        conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона" + str_tel + " на сумму" + rec_sum)
-    '''
+        if card is not None:
+            dis = {'cmd': {'связь и интернет'}}
+            tell_function("Выберите то, что хотите оплатить " + str(dis['cmd']))
+            reci = vosk_listen_recognize(5)
+            topic = recognize_cmd(reci, dis['cmd'])
+            phone = check_length("Скажите номер телефона ", 10)
+            print(phone, 'phone')
+            amount = check_length("Скажите сумму ", 3)
+            conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона" + phone + " на сумму" + amount)
+            response = requests.get(
+                BASE_URL + "pay?username=" + default_user + "&card=" + card + "&phone=" + phone + "&amount=" + amount)
+            if response.status_code == 200:
+                amount = json.loads(response.text)["balance"]
+                tell_function(f"Операция выполнена")
+                print("amount", amount)
+            else:
+                tell_function("Карта не обнаружена")
+                pay_service()
+
+
 
 
 def recognize_cmd(cmd, com):
@@ -173,24 +182,17 @@ def check_length(tell, length=0):
     Input description
     :return
     """
+    print("length", length)
     while True:
         tell_function(tell)
         par = vosk_listen_recognize(5)
         par = convert_to_numbers(par)
         if len(par) != length:
+            print("hi", par)
             tell_function("Не удалось распознать параметр")
         else:
             break
     return par
-
-
-def check_number():
-    """
-    Input description
-    :return:
-    """
-    rec = check_length("Скажите номер телефона ", 10)
-    return rec
 
 
 def conf(tell):
@@ -250,7 +252,7 @@ if __name__ == "__main__":
     for voice in voices:
         if voice.name == 'Vsevolod':
             tts.setProperty('voice', voice.id)
-    #api.run_FASTAPI()
+    # api.run_FASTAPI()
     print("Init complete. Let's talk")
     while True:
         start()
