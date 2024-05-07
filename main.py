@@ -43,12 +43,23 @@ def balance():
 
 
 def create_deposit():
-    """Function for create new deposit"""
+    """Function for create new deposit_name"""
     conf_bool = False
     while not conf_bool:
-        reci = check_length("Скажите название какого вклада вы хотите изменить ")
-        new_name = check_length("Скажите новое название ")
+        tell_function("Скажите название какого вклада вы хотите изменить ")
+        reci = vosk_listen_recognize(5)
+        tell_function("Скажите новое название ")
+        new_name = vosk_listen_recognize(5)
         conf_bool = conf("Поменять название вклада" + reci + " на " + new_name)
+        response = requests.get(
+            BASE_URL + "deposit?username=" + default_user + "&olddepositname=" + reci + "&newdepositname=" + new_name)
+        if response.status_code == 200:
+            deposit_name = json.loads(response.text)["deposit_name"]
+            tell_function(f"Операция выполнена")
+            print("new name", deposit_name)
+        else:
+            tell_function("Вклад не обнаружен")
+            create_deposit()
 
 
 def send():
@@ -85,6 +96,7 @@ def send():
 
 
 def pay_service():
+    """Function for making payments"""
     conf_bool = False
     while not conf_bool:
         card = choose_card()
@@ -94,7 +106,6 @@ def pay_service():
             reci = vosk_listen_recognize(5)
             topic = recognize_cmd(reci, dis['cmd'])
             phone = check_length("Скажите номер телефона ", 10)
-            print(phone, 'phone')
             amount = check_length("Скажите сумму ", 3)
             conf_bool = conf("Пополнить" + topic['cmd'] + " номер телефона" + phone + " на сумму" + amount)
             response = requests.get(
@@ -102,12 +113,10 @@ def pay_service():
             if response.status_code == 200:
                 amount = json.loads(response.text)["balance"]
                 tell_function(f"Операция выполнена")
-                print("amount", amount)
+                print(amount)
             else:
                 tell_function("Карта не обнаружена")
                 pay_service()
-
-
 
 
 def recognize_cmd(cmd, com):
