@@ -1,6 +1,4 @@
-import os
 import threading
-
 import speech_recognition
 from speech_recognition import WaitTimeoutError
 

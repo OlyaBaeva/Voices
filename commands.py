@@ -14,7 +14,7 @@ dict_commands = {
             },
             "добавить название":
             {
-                "responses": main.new
+                "responses": main.create_deposit
             },
             "пополнить":
             {
