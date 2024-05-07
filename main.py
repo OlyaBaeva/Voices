@@ -31,13 +31,16 @@ def balance():
     """Function for check balance"""
     global default_user
     global BASE_URL
+    print('hi')
     card = choose_card()
     if card is not None:
+        print('hihihs', card)
         response = requests.get(BASE_URL + "balance?username=" + default_user + "&card=" + card)
         if response.status_code == 200:
             amount = json.loads(response.text)["balance"]
             tell_function(f"Баланс вашей карты {card} составляет {amount}")
         else:
+            print('dddddd', card)
             tell_function("Карта не обнаружена")
             balance()
 
@@ -197,7 +200,6 @@ def check_length(tell, length=0):
         par = vosk_listen_recognize(5)
         par = convert_to_numbers(par)
         if len(par) != length:
-            print("hi", par)
             tell_function("Не удалось распознать параметр")
         else:
             break
