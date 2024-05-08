@@ -31,16 +31,14 @@ def balance():
     """Function for check balance"""
     global default_user
     global BASE_URL
-    print('hi')
     card = choose_card()
     if card is not None:
-        print('hihihs', card)
         response = requests.get(BASE_URL + "balance?username=" + default_user + "&card=" + card)
         if response.status_code == 200:
             amount = json.loads(response.text)["balance"]
             tell_function(f"Баланс вашей карты {card} составляет {amount}")
+
         else:
-            print('dddddd', card)
             tell_function("Карта не обнаружена")
             balance()
 
@@ -49,10 +47,8 @@ def create_deposit():
     """Function for create new deposit_name"""
     conf_bool = False
     while not conf_bool:
-        tell_function("Скажите название какого вклада вы хотите изменить ")
-        reci = vosk_listen_recognize(5)
-        tell_function("Скажите новое название ")
-        new_name = vosk_listen_recognize(5)
+        reci = check_length("Скажите название какого вклада вы хотите изменить ")
+        new_name = check_length("Скажите новое название ")
         conf_bool = conf("Поменять название вклада" + reci + " на " + new_name)
         response = requests.get(
             BASE_URL + "deposit?username=" + default_user + "&olddepositname=" + reci + "&newdepositname=" + new_name)
@@ -60,6 +56,7 @@ def create_deposit():
             deposit_name = json.loads(response.text)["deposit_name"]
             tell_function(f"Операция выполнена")
             print("new name", deposit_name)
+            start()
         else:
             tell_function("Вклад не обнаружен")
             create_deposit()
@@ -105,8 +102,7 @@ def pay_service():
         card = choose_card()
         if card is not None:
             dis = {'cmd': {'связь и интернет'}}
-            tell_function("Выберите то, что хотите оплатить " + str(dis['cmd']))
-            reci = vosk_listen_recognize(5)
+            reci = check_length("Выберите то, что хотите оплатить " + str(dis['cmd']))
             topic = recognize_cmd(reci, dis['cmd'])
             phone = check_length("Скажите номер телефона ", 10)
             amount = check_length("Скажите сумму ", 3)
@@ -194,16 +190,17 @@ def check_length(tell, length=0):
     Input description
     :return
     """
-    print("length", length)
     while True:
         tell_function(tell)
         par = vosk_listen_recognize(5)
-        par = convert_to_numbers(par)
-        if len(par) != length:
-            tell_function("Не удалось распознать параметр")
-        else:
-            break
-    return par
+        if length != 0:
+            par = convert_to_numbers(par)
+            if len(par) != length:
+                tell_function("Не удалось распознать параметр")
+            else:
+                break
+        elif len(par) != 0:
+            return par
 
 
 def conf(tell):
