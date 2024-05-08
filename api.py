@@ -7,11 +7,11 @@ users = {
         "phone": '+78005553535',
         "cards": {
             "card_1": {
-                "card_number": '0234',
+                "card_number": '5487345623450234',
                 "balance": "5000"
             },
             "card_2": {
-                "card_number": '5678',
+                "card_number": '1234567898765678',
                 "balance": "1000"
             }
         },
@@ -26,7 +26,7 @@ users = {
         "phone": '+78005554545',
         "cards": {
             "card_1": {
-                "card_number": '9012',
+                "card_number": '3456865412349012',
                 "balance": "50000"},
         }
     }
@@ -40,17 +40,17 @@ def run_FASTAPI():
 app = FastAPI()
 
 
-@app.get("/cards/{username}")
-def get_cards(username: str):
-    """
-    FastAPI endpoint for get all card on username
-    :param username:
-    :return: JSON list cards
-    """
-    if users[username] is not None:
-        return users[username]["cards"]
-    else:
-        raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
+# @app.get("/cards/{username}")
+# def get_cards(username: str):
+#     """
+#     FastAPI endpoint for get all card on username
+#     :param username:
+#     :return: JSON list cards
+#     """
+#     if users[username] is not None:
+#         return users[username]["cards"]
+#     else:
+#         raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
 
 
 @app.get("/balance")
@@ -65,10 +65,11 @@ def get_balance(username: Union[str, None] = None, card: Union[str, None] = None
         cards = users[username]["cards"]
         for el in cards.values():
             print(el)
-            if el["card_number"] == card:
+            if el["card_number"][-4:] == card:  # last 4
                 return {"card": card, "balance": el["balance"]}
         raise HTTPException(status_code=404, detail=f"User with username: {username} haven't card {card}")
     raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
+
 
 @app.get("/alldeposits")
 def deposit(username: Union[str, None] = None):
@@ -81,10 +82,11 @@ def deposit(username: Union[str, None] = None):
         deposits = users[username]["deposits"]
         if deposits is not None:
             for el in deposits.values():
-                    return {"deposit_name": el["deposit_name"]}
+                return {"deposit_name": el["deposit_name"]}
             return {"deposit_name": deposits['']}
         raise HTTPException(404, detail=f"User with username: {username} haven't deposits")
     raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
+
 
 @app.get("/deposit")
 def deposit(username: Union[str, None] = None, olddepositname: Union[str, None] = None,
@@ -119,7 +121,7 @@ def pay_service(username: Union[str, None] = None, card: Union[str, None] = None
     :return:
     """
     if users[username] is not None:
-        card_key = next((key for key, value in users[username]['cards'].items() if value["card_number"] == card), None)
+        card_key = next((key for key, value in users[username]['cards'].items() if value["card_number"][-4:] == card), None) #last 4
         if card_key is not None:
             if int(users[username]['cards'][card_key]["balance"]) >= int(amount):
                 users[username]['cards'][card_key]["balance"] = str(
