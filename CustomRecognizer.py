@@ -37,6 +37,7 @@ class CustomRecognizer(speech_recognition.Recognizer):
             if wait_for_stop:
                 listener_thread.join()  # block until the background thread is done, which can take around 1 second
 
+        print("background listen")
         listener_thread = threading.Thread(target=threaded_listen)
         listener_thread.daemon = True
         listener_thread.start()

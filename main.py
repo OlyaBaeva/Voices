@@ -14,7 +14,7 @@ import api
 
 def start():
     """Function for enter point in voice assistance"""
-    print("!", recognizer.background_listener_text)
+    print("recognize background listen:", recognizer.background_listener_text)
     if "привет марвин" in recognizer.background_listener_text:
         tell_function(textDescriptionFunction)
     elif commands.dict_commands['intents']["имя"] in recognizer.background_listener_text:
@@ -24,7 +24,6 @@ def start():
             start()
         else:
             commands.dict_commands['intents'][cmd['cmd']]["responses"]()
-            stop_listen()
 
 
 def balance():
@@ -37,7 +36,6 @@ def balance():
         if response.status_code == 200:
             amount = json.loads(response.text)["balance"]
             tell_function(f"Баланс вашей карты {card} составляет {amount}")
-
         else:
             tell_function("Карта не обнаружена")
             balance()
@@ -195,10 +193,10 @@ def check_length(tell, length=0):
         par = vosk_listen_recognize(5)
         if length != 0:
             par = convert_to_numbers(par)
-            if len(par) != length:
+            if len(par) != length and par != "":
                 tell_function("Не удалось распознать параметр")
-            else:
-                break
+            elif par != "":
+                return par
         elif len(par) != 0:
             return par
 
