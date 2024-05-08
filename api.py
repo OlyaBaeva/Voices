@@ -18,7 +18,7 @@ users = {
         "deposits": {
             "deposit_1": {
                 "deposit_name": "премиум",
-                "money": "",
+                "balance": "",
             }
         }
     },
@@ -70,6 +70,21 @@ def get_balance(username: Union[str, None] = None, card: Union[str, None] = None
         raise HTTPException(status_code=404, detail=f"User with username: {username} haven't card {card}")
     raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
 
+@app.get("/alldeposits")
+def deposit(username: Union[str, None] = None):
+    """
+    FastAPI endpoint for get balance from card for user
+    :param username: username user
+    :return:
+    """
+    if users[username] is not None:
+        deposits = users[username]["deposits"]
+        if deposits is not None:
+            for el in deposits.values():
+                    return {"deposit_name": el["deposit_name"]}
+            return {"deposit_name": deposits['']}
+        raise HTTPException(404, detail=f"User with username: {username} haven't deposits")
+    raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
 
 @app.get("/deposit")
 def deposit(username: Union[str, None] = None, olddepositname: Union[str, None] = None,
