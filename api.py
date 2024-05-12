@@ -19,6 +19,10 @@ users = {
             "deposit_1": {
                 "deposit_name": "премиум",
                 "balance": "",
+            },
+            "deposit_2": {
+                "deposit_name": "стандарт",
+                "balance": "",
             }
         }
     },
@@ -43,9 +47,10 @@ app = FastAPI()
 @app.get("/login")
 def login(userphone: Union[str, None] = None):
     """
-    FastAPI endpoint for getting username of user with given telephone number
-    :param userphone: the phone number that the user sent
-    :return: username with this telephone number
+    Конечная точка FastAPI для получения имени пользователя с заданным номером телефона
+    :param userphone: номер телефона, который отправил пользователь
+    :return: если пользователь с таким телефоном существует,имя пользователя с этим номером телефона;
+    В противном случае, Exception
     """
     username = None
     for key in users:
@@ -60,10 +65,11 @@ def login(userphone: Union[str, None] = None):
 @app.get("/card")
 def get_cards(username: Union[str, None] = None, card: Union[str, None] = None):
     """
-    FastAPI endpoint for get all cards on username
-    :param card: the user's card numbers
-    :param username: sender's username
-    :return: JSON list cards
+    Конечная точка FastAPI для проверки наличия карты с таким номером у пользователя
+    :param card: номер карты
+    :param username: имя пользователя
+    :return: True, если карта с таким номером существует у пользователя;
+    в противном случае, Exception
     """
     card_numbers = [card["card_number"] for user in users.values() for card in user["cards"].values()]
     if card in card_numbers:
@@ -75,10 +81,10 @@ def get_cards(username: Union[str, None] = None, card: Union[str, None] = None):
 @app.get("/balance")
 def get_balance(username: Union[str, None] = None, card: Union[str, None] = None):
     """
-    FastAPI endpoint for get balance from card for user
-    :param username: sender's username
-    :param card: last 4 number card
-    :return:
+    Конечная точка FastAPI для получения баланса с карты пользователя
+    :param username: имя пользователя
+    :param card: последние 4 цифры номера карты
+    :return: возвращает последние 4 цифры номера карты и количество денег на ней
     """
     if users[username] is not None:
         cards = users[username]["cards"]
@@ -93,26 +99,31 @@ def get_balance(username: Union[str, None] = None, card: Union[str, None] = None
 @app.get("/alldeposits")
 def deposit(username: Union[str, None] = None):
     """
-    FastAPI endpoint for get balance from card for user
-    :param username: sender's username
-    :return:
+    Конечная точка FastAPI для получения всех вкладов пользователя
+    :param username: имя пользователя
+    :return: если пользовател существует и у пользователя есть вклады, список всех вкладов пользователя4
+    В противном случае, Exception
     """
     if users[username] is not None:
         deposits = users[username]["deposits"]
-        if deposits is not None:
+        if users[username]["deposits"] is not None:
+            arr = list()
             for el in deposits.values():
-                return {"deposit_name": el["deposit_name"]}
-            return {"deposit_name": deposits['']}
-        raise HTTPException(404, detail=f"User with username: {username} haven't deposits")
-    raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
+                arr.append(el["deposit_name"])
+            return arr
+        return {"deposit_name": ""}
+    else:
+        raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
+
 
 
 @app.get("/allcards")
 def allcards(username: Union[str, None] = None):
     """
-    FastAPI endpoint for getting all cards of the user
-    :param username: sender's username
-    :return:list of user's card numbers
+    Конечная точка FastAPI для получения всех карт пользователя
+    :param username: имя пользователя
+    :return: если пользователь существует, список всех карт пользователя;
+    В противном случае, Exception
     """
     if users[username] is not None:
         cards = users[username]["cards"]
@@ -130,11 +141,12 @@ def allcards(username: Union[str, None] = None):
 def deposit(username: Union[str, None] = None, olddepositname: Union[str, None] = None,
             newdepositname: Union[str, None] = None):
     """
-    FastAPI endpoint for get balance from card for user
-    :param newdepositname: new name of the deposit
-    :param olddepositname: the name that needs to be changed
-    :param username: sender's username
-    :return: changed deposit's name
+    Конечная точка FastAPI для смены названия существующего вклада пользователя
+    :param newdepositname: новое название вклада
+    :param olddepositname: текущее название, которое должно быть изменено
+    :param username: имя пользователя
+    :return: Если пользовтаель и вклад с текущем названием существуют, измененное название вклада;
+    В противном случае, Exception
     """
     if users[username] is not None:
         deposit_key = next(
@@ -151,12 +163,13 @@ def deposit(username: Union[str, None] = None, olddepositname: Union[str, None] 
 def pay_service(username: Union[str, None] = None, card: Union[str, None] = None, phone: Union[str, None] = None,
                 amount: Union[str, None] = None):
     """
-    FastAPI endpoint for get balance from card for user
-    :param phone: the phone number to be paid for
-    :param amount: the amount to be transferred
-    :param username: sender's username
-    :param card: last 4 number card
-    :return:
+   Конечная точка FastAPI endpoint для осуществления платежей
+    :param phone: номер телефона, за который необходимо заплатить
+    :param amount: сумма, которая будет оплачена
+    :param username: имя пользователя
+    :param card: номер карты, с которой совершается оплата
+    :return: если пользователь и карта с таким номреом сущесвуют и сумма не больше баланса карты, карта и ее обновленный баланс
+    В противном случае, Exception
     """
     if users[username] is not None:
         card_key = next((key for key, value in users[username]['cards'].items() if value["card_number"] == card), None)
@@ -176,13 +189,14 @@ def send(username: Union[str, None] = None, fromcard: Union[str, None] = None, t
          tocard: Union[str, None] = None,
          amount: Union[str, None] = None):
     """
-    FastAPI endpoint for sending money from one user to another user
-    :param username: sender's username
-    :param fromcard: card number from which money is sent
-    :param tophone: recipient's phone number
-    :param tocard: recipient's card number
-    :param amount: sum of money that is sent
-    :return: number of sender's card, changed sender's balance
+    Конечная точка FastAPI для перевода денег от пользователю другому пользователю
+    :param username: имя пользователя - отправителя
+    :param fromcard: номер карты, с которой совершается перевод
+    :param tophone: номер телефона получателя
+    :param tocard: номер карты получателя
+    :param amount: сумма перевода
+    :return: если пользователь-отправитель существует, если карта получателя существует, номер карты получателя и ее обновленный баланс,
+    В противном случае, Exception
     """
     if users[username] is not None:
         card_key = None
