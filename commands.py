@@ -12,9 +12,9 @@ dict_commands = {
             {
              "responses": main.balance
             },
-            "добавить название":
+            "депозит":
             {
-                "responses": main.new
+                "responses": main.create_deposit
             },
             "пополнить":
             {
