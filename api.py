@@ -116,7 +116,6 @@ def deposit(username: Union[str, None] = None):
         raise HTTPException(status_code=404, detail=f"User with username: {username} not found")
 
 
-
 @app.get("/allcards")
 def allcards(username: Union[str, None] = None):
     """
