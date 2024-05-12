@@ -1,25 +1,28 @@
 import main
 
 dict_commands = {
-        "intents":
+    "intents":
         {
             "имя": ('марвин'),
             "перевод":
-            {
-                "responses": main.send
-            },
+                {
+                    "responses": main.send
+                },
             "баланс":
-            {
-             "responses": main.balance
-            },
+                {
+                    "responses": main.balance
+                },
             "депозит":
-            {
-                "responses": main.create_deposit
-            },
+                {
+                    "responses": main.rename_deposite
+                },
             "пополнить":
-            {
-            "responses": main.pay_service
-            },
+                {
+                    "responses": main.pay_service
+                },
+            "login":
+                {
+                    "responses": main.login
+                }
         }
 }
-
